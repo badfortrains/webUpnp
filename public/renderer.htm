@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+<title>renderer test</title>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript" src="/javascripts/jquery.min.js"></script>
+<script type="text/javascript" src="/javascripts/jquery.jplayer.min.js"></script>
+<script>
+$(document).ready(function(){
+	socket = io.connect('http://192.168.1.12/renderer');
+function main(){
+	socket.emit("rendererAdded");
+	socket.on("play",function(URL){
+		$("#jplayer").jPlayer("setMedia",{mp3:URL});
+		$("#jplayer").jPlayer("play");
+	});
+}
+
+
+
+
+ var jPlayer = $("#jplayer").jPlayer({
+  ready: main,
+	ended: function(){socket.emit("stateChanged",{name: "TransportState",value: "NO_MEDIA_PRESENT"})},
+	play: function(){socket.emit("stateChanged",{name: "TransportState",value: "PLAYING"})},
+	loadeddata: function(){socket.emit("stateChanged",{name: "playResult",value: {res: true}})},
+	error: function(){
+socket.emit("stateChanged",{name: "playResult",value: {res: false, error: "could not load track"}})},
+	pause: function(){socket.emit("stateChanged",{name: "TransportState",value: "PLAYBACK_PAUSED"})},
+  swfPath: "/javascripts",
+  supplied: "mp3"
+ });
+  
+
+});	
+
+
+
+</script>
+</head>
+
+<body>
+	<div id="playerContainer"></div>
+	<div id="jplayer"></div>
+</body>
+</html>

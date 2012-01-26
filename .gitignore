@@ -1,0 +1,13 @@
+node_modules/
+clientside/
+routes/
+views/
+public/images/
+connect.js
+package.json
+public/javascripts/dojo/*
+!public/javascripts/dojo/upnp/
+public/javascripts/socket.io.js
+public/javascripts/jquery*
+public/javascripts/Jplayer.swf
+*~

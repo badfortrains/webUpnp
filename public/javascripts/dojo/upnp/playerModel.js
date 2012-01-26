@@ -13,6 +13,9 @@ define("upnp/playerModel",["dojo"], function(dojo){
 				dojo.subscribe("player/next",function(){
 						socket.emit("next");
 				});
+				dojo.subscribe("player/playButton",function(){
+						socket.emit("playButton");
+				});
 			}
 	});
 });

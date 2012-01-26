@@ -6,7 +6,8 @@ define("upnp/playerView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 			//	html += 'Volume:<span id="volumeLvl"></span><br>';
 			//	html += 'PlayState:<span id="playState"></span><br>';
 			//	html += 'Mute:<span id="muteState"></span>';
-				html += '<div id="playControls" class="hidden"><a href="#" id="back">Back</a>';
+				html += '<div id="playControls" class="disabled"><a href="#" id="back">Back</a>';
+				html += '|<a href="#" id="playButton">Play</a>';
 				html += '|<a href="#" id="next">Next</a></div>';
 				this.el.innerHTML = html;
 				
@@ -15,6 +16,9 @@ define("upnp/playerView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 				});
 				dojo.connect(dojo.byId("next"),"onclick",function(){
 					dojo.publish("player/next");
+				});
+				dojo.connect(dojo.byId("playButton"),"onclick",function(){
+					dojo.publish("player/playButton");
 				});
 
 				dojo.connect(dojo.byId("mediaInfo"),"onclick",function(){
@@ -37,14 +41,19 @@ define("upnp/playerView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 				//	dojo.byId("volumeLvl").innerHTML = data.value;
 				//else if(data.name == "TransportState"){
 				//	dojo.byId("playState").innerHTML = data.value;
-					//if(data.value === "STOPPED" || data.value === "UNKNOWN_NEXT"){
-					//	dojo.byId("mediaInfo").innerHTML = "";
-					//}
-				//}
+				if(data.value === "PAUSED_PLAYBACK"){
+					dojo.replaceClass(dojo.byId("playControls"),"enabled","disabled");
+					dojo.byId("playButton").innerHTML = "Play";
+				}else if(data.value === "PLAYING"){
+					dojo.replaceClass(dojo.byId("playControls"),"enabled","disabled");
+					dojo.byId("playButton").innerHTML = "Pause";
+				}else if(data.value === "STOPPED"){
+						dojo.replaceClass(dojo.byId("playControls"),"disabled","enabled");
+						dojo.byId("playButton").innerHTML = "Play";
+						dojo.byId("mediaInfo").innerHTML = "";
+				}
 			},
 			playTrack: function(data){
-			//	dojo.byId("playState").innerHTML = "PLAYING";
-				dojo.removeClass(dojo.byId("playControls"),"hidden");
 				dojo.byId("mediaInfo").innerHTML = data.Title + " - " + data.Artist + " - " + data.Album;
 			}
 	});

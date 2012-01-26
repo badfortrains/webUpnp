@@ -220,6 +220,13 @@ UpnpRenderer.prototype = {
 	},
 	getRenderer: function(){
 		return({uuid: this.uuid, name: this.name});
+	},
+	playPause: function(){
+		if(this.TransitionState === "PLAYING"){
+			mw.pause(function(){});
+		}else if(this.TransitionState === "PAUSED_PLAYBACK"){
+			mw.play(function(){});
+		}
 	}
 }
 
@@ -285,6 +292,9 @@ WebRenderer.prototype.play = function(trackId, callback){
 		});
 	});
 };
+WebRenderer.prototype.playPause = function(){
+	this.socket.emit("playPause");
+}
 
 var Controller = function(sid,socket,target){
 	this.socket = socket;
@@ -454,7 +464,11 @@ exports.init = function(sio){
 				});
 				socket.emit("deviceResults",result);
 			});
-
+			socket.on('playButton',function(){
+				if(control.renderer){
+					rendererList[control.renderer].playPause();
+				}
+			});
 			socket.on('next',function(){
 				console.log("NEXT");
 				console.log(control.renderer);

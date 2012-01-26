@@ -1,142 +1,175 @@
-		/*** The Essential Code ***/
-
+/*reset*/
 *{
 	padding:0px;
 	margin:0px;
 
 }
-		body {
-			min-width: 630px;         /* 2 x (LC fullwidth + CC padding) + RC fullwidth */
-			position: absolute;
-			right: 0px;
-			left: 0px;
-			bottom: 0px;
-			top: 0px;
-			background-color:#2D251D;
-		  color:#96836F;
-			font-family: helvetica;
-			font-size:1.5em;
 
-		}
-		a:visited,a:active,a:hover,a{
-			color:#96836F;
-			text-decoration:none;
-		}
+/*global settings ***********************************/
+body {
+	min-width: 630px;         
+	position: absolute;
+	right: 0px;
+	left: 0px;
+	bottom: 0px;
+	top: 0px;
+	background-color:#2D251D;
+  color:#96836F;
+	font-family: helvetica;
+	font-size:1.5em;
+}
+a:visited,a:active,a:hover,a{
+	color:#96836F;
+	text-decoration:none;
+}
+/***********************************************/
 
-		input{
-			background-color:#96836F;
-			color:#2D251D;
-			border:1px solid black;
-		}
-		#clearSearch{
-			margin-left:.5em;
-		}
-		
-		#center {
-			top:3em;
-			right:0em;
-			left:5em;
-			bottom:0em;
-			position:absolute;
-		}
-		
-		#left {
-			top:3em;
-			width: 5em;          
-			bottom:0em;
-			padding: 0 10px;   
-			position:absolute;
-		}
+/*General layout********************/
+#center {
+	top:3em;
+	right:0em;
+	left:5em;
+	bottom:0em;
+	position:absolute;
+}
+
+#left {
+	top:3em;
+	width: 5em;          
+	bottom:0em;
+	padding: 0 10px;   
+	position:absolute;
+}
 
 
-		#header {
-			height:7em;
-			width:100%;
-		}
-		#playerContainer{
-			float:left;
-			width:75%;
-		}
-		#playerContainer #playControls{
-			margin-left: 1em;
-			font-size:.8em;		
-		}
+#header {
+	height:7em;
+	width:100%;
+}
+/***********************/
 
-		#playControls #back{
-			margin-right:.3em;
-		}
-		#playControls #next{
-			margin-left:.3em;
-		}
-		#mediaInfo{
-			color:#74868D;
-		}
-		
+/*Search stylings *****************************/
+input{
+	background-color:#96836F;
+	color:#2D251D;
+	border:1px solid black;
+}
+#clearSearch{
+	margin-left:.5em;
+}
 
-		#deviceContainer{
-			float:right;
-		}
-		#trackTable{
-			padding-right:2em;
-			position:absolute;
-			top:3em;
-			bottom:0em;
-			left:0em;
-			right:0em;
-			overflow:auto;
-		}
+/***********************************************/
 
 
-		#trackTable table{
-			width:100%;
-			font-size:0.7em;
-		}
-		#trackTable .selected{
-			background-color:#74868D;
-			color:#2D251D;
-		}
+/*Player stuff*/
+#playerContainer{
+	float:left;
+	width:75%;
+}
+#playerContainer #playControls{
+	margin-left: 1em;
+	font-size:.8em;		
+}
 
+#playControls.disabled, .disabled a{
+	color:#6F6054;
+}
+
+#playControls a{
+	margin-left:.3em;
+	margin-right: .3em;
+}
+
+/*
+#playControls #back{
+	margin-right:.3em;
+}
+#playControls #next{
+	margin-left:.3em;
+}*/
+#mediaInfo{
+	color:#74868D;
+}
+/*********/
+
+/*device list*/
+#deviceContainer{
+	float:right;
+}
+
+/*********/
+
+/*track table styling ******/
+#trackTable{
+	padding-right:2em;
+	position:absolute;
+	top:3em;
+	bottom:0em;
+	left:0em;
+	right:0em;
+	overflow:auto;
+}
+
+
+#trackTable table{
+	width:100%;
+	font-size:0.7em;
+}
+#trackTable .selected{
+	background-color:#74868D;
+	color:#2D251D;
+}
+
+/***************/
+
+
+/*loading*/
 .not-loading{
-	visibility:hidden;
+visibility:hidden;
 }
 
 .loading{
-	display:block;
+display:block;
 }
 
 .progress{
-	position: absolute;
-	left: 50%;
-	top: 50%;
-	width:48px;
-	height:48px;
-  background-image: url('../images/load.gif');
+position: absolute;
+left: 50%;
+top: 50%;
+width:48px;
+height:48px;
+background-image: url('../images/load.gif');
 }
+/***************/
 
+
+/*letter jump control*/
 .letters{
-	margin-top:15em;
-	font-size: 14px;
-	width: 20px;
-	list-style-type:none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	-o-user-select: none;
-	user-select: none;
+margin-top:15em;
+font-size: 14px;
+width: 20px;
+list-style-type:none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+-o-user-select: none;
+user-select: none;
 }
 
 .selectBox{
-	border: 2px solid #000033;
-	background-color: #99CCFF;
-	color:black;
-	font-size: 70px;
-	text-align: center;
-	position:fixed;
-	left: 50px;
-	top: 50%;
+border: 2px solid #000033;
+background-color: #99CCFF;
+color:black;
+font-size: 70px;
+text-align: center;
+position:fixed;
+left: 50px;
+top: 50%;
 }
 
 .hidden{
 visibility: hidden;
 }
+
+/*******/

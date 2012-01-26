@@ -9,11 +9,19 @@
 <script>
 $(document).ready(function(){
 	socket = io.connect('http://localhost/renderer');
-function main(){
+var playStatus = false;
+function main(event){
 	socket.emit("rendererAdded");
 	socket.on("play",function(URL){
 		$("#jplayer").jPlayer("setMedia",{mp3:URL});
 		$("#jplayer").jPlayer("play");
+	});
+	socket.on("playPause",function(){
+		if(playStatus){
+			$("#jplayer").jPlayer("pause");
+		}else{
+			$("#jplayer").jPlayer("play");
+		}
 	});
 }
 
@@ -21,13 +29,14 @@ function main(){
 
 
  var jPlayer = $("#jplayer").jPlayer({
-  ready: main,
+  ready: main(event),
 	ended: function(){socket.emit("stateChanged",{name: "TransportState",value: "NO_MEDIA_PRESENT"})},
-	play: function(){socket.emit("stateChanged",{name: "TransportState",value: "PLAYING"})},
+	play: function(){playStatus=true;socket.emit("stateChanged",{name: "TransportState",value: "PLAYING"})},
 	loadeddata: function(){socket.emit("stateChanged",{name: "playResult",value: {res: true}})},
 	error: function(){
 socket.emit("stateChanged",{name: "playResult",value: {res: false, error: "could not load track"}})},
-	pause: function(){socket.emit("stateChanged",{name: "TransportState",value: "PLAYBACK_PAUSED"})},
+	pause: function(){playStatus=false;socket.emit("stateChanged",{name: "TransportState",value: "PAUSED_PLAYBACK"})},
+	stop: function(){playStatus=false;},
   swfPath: "/javascripts",
   supplied: "mp3"
  });

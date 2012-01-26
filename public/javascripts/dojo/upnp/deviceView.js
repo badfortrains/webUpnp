@@ -1,4 +1,4 @@
-define("deviceView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"], function(dojo){
+define("upnp/deviceView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"], function(dojo){
 	return dojo.declare("mediawatcher.trackview", null, {
 			constructor: function(el){
 				this.el = el;

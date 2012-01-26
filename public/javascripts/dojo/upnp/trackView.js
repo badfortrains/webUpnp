@@ -1,4 +1,4 @@
-define("trackView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"], function(dojo){
+define("upnp/trackView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"], function(dojo){
 	return dojo.declare("mediawatcher.trackview", null, {
 			constructor: function(el){
 				this.columns = ["Title","Artist","Album","TrackNumber"];

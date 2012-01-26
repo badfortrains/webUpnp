@@ -25,7 +25,7 @@ if (!Function.prototype.bind) {
 
 var	socket;
 
-require(["dojo/ready","playerView","playerModel","trackView", "trackModel","../javascripts/deviceView","deviceModel","dojo/_base/xhr","dojo/dom"], function(ready,PlayerView,PlayerModel,TrackView,TrackModel,DeviceView,DeviceModel,xhr,dom){
+require(["dojo/ready","upnp/playerView","upnp/playerModel","upnp/trackView", "upnp/trackModel","upnp/deviceView","upnp/deviceModel","dojo/_base/xhr","dojo/dom"], function(ready,PlayerView,PlayerModel,TrackView,TrackModel,DeviceView,DeviceModel,xhr,dom){
 	ready(init);
 	
 

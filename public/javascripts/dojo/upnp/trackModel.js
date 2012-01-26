@@ -1,4 +1,4 @@
-define("trackModel",["dojo","dojo/store/Memory"], function(dojo,memory){
+define("upnp/trackModel",["dojo","dojo/store/Memory"], function(dojo,memory){
 	return dojo.declare("mediawatcher.trackmodel", null, {
 			constructor: function(){
 

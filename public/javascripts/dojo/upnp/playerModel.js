@@ -1,4 +1,4 @@
-define("playerModel",["dojo"], function(dojo){
+define("upnp/playerModel",["dojo"], function(dojo){
 	return dojo.declare("mediawatcher.playermodel", null, {
 			constructor: function(){
 				socket.on("trackChange",function(track){

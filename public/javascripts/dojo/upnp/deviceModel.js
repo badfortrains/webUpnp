@@ -1,4 +1,4 @@
-define("deviceModel",["dojo"], function(dojo){
+define("upnp/deviceModel",["dojo"], function(dojo){
 	return dojo.declare("mediawatcher.trackmodel", null, {
 			constructor: function(){
 				this.devices=[];

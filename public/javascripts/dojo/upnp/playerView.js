@@ -1,4 +1,4 @@
-define("playerView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"], function(dojo){
+define("upnp/playerView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"], function(dojo){
 	return dojo.declare("mediawatcher.playerview", null, {
 			constructor: function(el){
 				this.el = el;

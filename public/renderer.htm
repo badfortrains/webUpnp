@@ -8,7 +8,7 @@
 <script type="text/javascript" src="/javascripts/jquery.jplayer.min.js"></script>
 <script>
 $(document).ready(function(){
-	socket = io.connect('http://192.168.1.12/renderer');
+	socket = io.connect('http://localhost/renderer');
 function main(){
 	socket.emit("rendererAdded");
 	socket.on("play",function(URL){

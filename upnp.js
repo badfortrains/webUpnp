@@ -11,6 +11,7 @@ var SORTBY = {
 	AlbumDes : {Album: -1, TrackNumber: -1},
 	TitleDes : {Title: -1},
 	TrackNumberDes : {TrackNumber: -1},
+	ForNum : {Artist: 1, Album: 1, Title: 1}
 }
 
 var mediaWatcher = require('./media_watcher');
@@ -20,8 +21,10 @@ var server = new mongodb.Server("127.0.0.1", 27017, {});
 var db = new mongodb.Db('test', server);
 db.open(function (error, client) {
   if (error) throw error;
-  db.dropDatabase(function(err, result) {
-  	collection = new mongodb.Collection(client, 'tracks');
+	db.collection("tracks",function(error,tracks){
+  	tracks.drop(function(err, result) {
+  		collection = new mongodb.Collection(client, 'tracks');
+		});
   });
 });
 
@@ -36,6 +39,17 @@ var findNumbers = function(){
 		      "Accept-Encoding": "gzip"
 		  }
 		};
+	function insertTracks(data){
+		db.collection("trackNumbers",function(error,trackNumbers){
+			console.log("HERE");
+			console.log("INSERT +"+data);
+			if(!error){
+				console.log("NO ERROR");
+				trackNumbers.insert(data);
+			}
+			doNext();
+		});
+	}
 	function makeRequest(callback){
 		http.get(options, function(getRes){
 		  var body = "";
@@ -57,38 +71,131 @@ var findNumbers = function(){
 			console.log("in getTracks");
 			console.log(data);
 			var tracks = JSON.parse(data);
-			var result=[];
-			if(tracks && tracks.tracklist && tracks.tracklist.length){						
+			console.log(tracks.tracklist);
+			if(tracks && tracks.tracklist && tracks.tracklist.length){			
+				var result = [];			
 				tracks.tracklist.forEach(function(item){
 					result.push({Artist:artist,Album:album,Title:item.title,TrackNumber:item.position});
 				});
+				insertTracks(result);
+			}else{
+				doNext();
 			}
-			finalCallback(result);
 		});
 	}
 	function getRelease(artist,album){
+		var success = false;
 		options.path = "/database/search?artist="+encodeURIComponent(artist)+"&release_title="+encodeURIComponent(album);
 		makeRequest(function(data){
-			console.log("in getRelease");
-			console.log(data);
+			console.log("in getRelease artist = "+artist+" album = "+album);
 			var artistData = JSON.parse(data);
 			for(i = 0; i < artistData.results.length; i++){
 				if(artistData.results[i].format && artistData.results[i].format.length && artistData.results[i].format[0] === "CD"){
 					getTracks(artist,album,artistData.results[i].id);
+					success = true;
 					break;
 				}		
 			};
+			if(!success){
+				doNext();
+			}
+		});
+	}
+		var currentIndex = 0;
+		var inputData;
+		var lastHash = "";
+	function doNext(){
+		if(currentIndex < inputData.length){
+			item = inputData[currentIndex++];
+			while(lastHash == "" + item.Album + item.Artist){
+				item = inputData[currentIndex++];
+				if(!item){
+					console.log("RETURN?");					
+					return;
+				}
+				console.log("in While");
+			}
+			getRelease(item.Artist,item.Album);
+			lastHash = "" + item.Album + item.Artist;
+		}
+	}
+	function getHash(track){
+		var hash = track.Title + track.Artist + track.Album;
+		return hash.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
+		//return track.Title.toLowerCase();
+	}
+	function compare(track,num,sortObj){
+		var result;
+		function comp(s1,s2){
+			s1 = s1.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
+			s2 = s2.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
+			if(s1 > s2)
+				return 1;
+			else if(s1 < s2)
+				return -1;
+			else
+				return 0;
+		}
+		var  keys = Object.keys(sortObj);
+ 		for(var i=0; i < keys.length; i++){
+			result = comp(track[keys[i]],num[keys[i]]);
+			if(result !== 0){
+				break;
+			}
+		}
+		return result;
+	}
+	function resolveNums(nums){
+		var t=0,
+				n=0,
+				numHash="",
+				trackHash="";
+				var compRes;
+		db.collection("tracks",function(error,trackCollection){
+			trackCollection.find({},COLUMNS).sort(SORTBY.ForNum).toArray(function(err, tracks){
+				while(t<tracks.length && n<nums.length){
+					//trackHash = getHash(tracks[t]);
+					//numHash = getHash(nums[n]);
+					compRes = compare(tracks[t],nums[n],SORTBY.ForNum);
+
+					if(compRes === 0){
+						console.log(tracks[t].Title + " =?= " + nums[n].Title);
+						trackCollection.update({_id: tracks[t]._id},{$set: {TrackNumber: parseFloat(nums[n].TrackNumber)}})
+						t++;
+						n++;
+					}else if(compRes === 1){
+						n++;
+					}else{
+						t++;
+					}
+				}
+			});
 		});
 	}
 	return{
-		doSearch: function(artist,album,callback){
-			finalCallback = callback;
-			getRelease(artist,album);
+		doSearch: function(tracks){
+			//finalCallback = callback;
+			db.collection("tracks",function(error,tracks){
+				tracks.find({},COLUMNS).sort(SORTBY.Artist).toArray(function(err, tracks){
+					if(!err){
+						console.log("HERE");
+						inputData = tracks;
+						doNext();
+					}
+				});
+			});
+		},
+		fixNumbers: function(){
+			db.collection("trackNumbers",function(error,nums){
+				nums.find({},COLUMNS).sort(SORTBY.ForNum).toArray(function(err, nums){
+					resolveNums(nums);
+				});
+			}); 
 		}
 	}
 }
 
-findNumbers().doSearch("Future Islands","On The Water",function(data){console.log(data)});
+
 
 
 var UpnpRenderer = function(uuid,name){
@@ -434,11 +541,14 @@ var onTracksAdded = function(data){
 			tracks.insert(data);
 			tracks.ensureIndex({Artist: 1,Album: 1, Title: 1});
 			console.log("tracks inserted");
+			//findNumbers().doSearch();
+			findNumbers().fixNumbers();
 		});
 	}
 
 }
 
+//findNumbers().doSearch([{Artist:"Air France", Album:"No Way Down"}]);
 var respond = function (data){
 	event = mw.pollEvent();
 	while(event){

@@ -1,3 +1,4 @@
+var http = require('http');
 var BUFF_SIZE = 40;//must be even
 var COLUMNS = {Artist:1,Album:1,Title:1,TrackNumber:1,_id:1};
 var SEARCHABLE = ["Artist","Album","Title"];
@@ -25,6 +26,69 @@ db.open(function (error, client) {
 });
 
 
+var findNumbers = function(){
+		finalCallback = function(){};
+		options = {
+		  host: 'api.discogs.com',
+		  port: 80,
+		  path: '',
+		  headers: {
+		      "Accept-Encoding": "gzip"
+		  }
+		};
+	function makeRequest(callback){
+		http.get(options, function(getRes){
+		  var body = "";
+
+		  getRes.on('data', function(chunk){
+		      body = body + chunk;
+		  });
+
+		  getRes.on('end', function(err, data){
+				if(!err){
+					callback(body)
+				}
+			});
+		});
+	}
+	function getTracks(artist, album, releaseid){
+		options.path = "/releases/"+releaseid;
+		makeRequest(function(data){
+			console.log("in getTracks");
+			console.log(data);
+			var tracks = JSON.parse(data);
+			var result=[];
+			if(tracks && tracks.tracklist && tracks.tracklist.length){						
+				tracks.tracklist.forEach(function(item){
+					result.push({Artist:artist,Album:album,Title:item.title,TrackNumber:item.position});
+				});
+			}
+			finalCallback(result);
+		});
+	}
+	function getRelease(artist,album){
+		options.path = "/database/search?artist="+encodeURIComponent(artist)+"&release_title="+encodeURIComponent(album);
+		makeRequest(function(data){
+			console.log("in getRelease");
+			console.log(data);
+			var artistData = JSON.parse(data);
+			for(i = 0; i < artistData.results.length; i++){
+				if(artistData.results[i].format && artistData.results[i].format.length && artistData.results[i].format[0] === "CD"){
+					getTracks(artist,album,artistData.results[i].id);
+					break;
+				}		
+			};
+		});
+	}
+	return{
+		doSearch: function(artist,album,callback){
+			finalCallback = callback;
+			getRelease(artist,album);
+		}
+	}
+}
+
+findNumbers().doSearch("Future Islands","On The Water",function(data){console.log(data)});
 
 
 var UpnpRenderer = function(uuid,name){

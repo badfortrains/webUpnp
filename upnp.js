@@ -22,9 +22,9 @@ var db = new mongodb.Db('test', server);
 db.open(function (error, client) {
   if (error) throw error;
 	db.collection("tracks",function(error,tracks){
-  	tracks.drop(function(err, result) {
-  		collection = new mongodb.Collection(client, 'tracks');
-		});
+//  	tracks.drop(function(err, result) {
+//  		collection = new mongodb.Collection(client, 'tracks');
+//		});
   });
 });
 
@@ -120,21 +120,20 @@ var findNumbers = function(){
 		}
 	}
 	function getHash(track){
-		var hash = track.Title + track.Artist + track.Album;
-		return hash.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
-		//return track.Title.toLowerCase();
+		var hash = track.Title + " " + track.Artist + " " + track.Album;
+		//return hash.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
+		return hash;
 	}
 	function compare(track,num,sortObj){
 		var result;
 		function comp(s1,s2){
-			s1 = s1.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
-			s2 = s2.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
-			if(s1 > s2)
-				return 1;
-			else if(s1 < s2)
-				return -1;
-			else
+			if(s1.toLowerCase().replace(",","").replace(".","").replace("&","and").replace(" ","") == s2.toLowerCase().replace(",","").replace(".","").replace("&","and").replace(" ","")){
 				return 0;
+			}
+			else if(s1 > s2)
+				return 1;
+			else 
+				return -1;
 		}
 		var  keys = Object.keys(sortObj);
  		for(var i=0; i < keys.length; i++){
@@ -154,12 +153,11 @@ var findNumbers = function(){
 		db.collection("tracks",function(error,trackCollection){
 			trackCollection.find({},COLUMNS).sort(SORTBY.ForNum).toArray(function(err, tracks){
 				while(t<tracks.length && n<nums.length){
-					//trackHash = getHash(tracks[t]);
-					//numHash = getHash(nums[n]);
+					trackHash = getHash(tracks[t]);
+					numHash = getHash(nums[n]);
 					compRes = compare(tracks[t],nums[n],SORTBY.ForNum);
 
 					if(compRes === 0){
-						console.log(tracks[t].Title + " =?= " + nums[n].Title);
 						trackCollection.update({_id: tracks[t]._id},{$set: {TrackNumber: parseFloat(nums[n].TrackNumber)}})
 						t++;
 						n++;
@@ -547,14 +545,15 @@ var onTracksAdded = function(data){
 	}
 
 }
-
+//findNumbers().fixNumbers();
 //findNumbers().doSearch([{Artist:"Air France", Album:"No Way Down"}]);
 var respond = function (data){
 	event = mw.pollEvent();
 	while(event){
 		if(event.name === "msAdd") {
 			var server = mw.getServer();
-			mw.getTracks(onTracksAdded,server);
+			findNumbers().fixNumbers();
+			//mw.getTracks(onTracksAdded,server);
 			console.log("serverAdded");
 	  }else if(event.name === "mrAdd"){
 			rendererList[event.uuid] = new UpnpRenderer(event.uuid,event.value);

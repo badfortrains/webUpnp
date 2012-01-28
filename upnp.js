@@ -22,9 +22,9 @@ var db = new mongodb.Db('test', server);
 db.open(function (error, client) {
   if (error) throw error;
 	db.collection("tracks",function(error,tracks){
-//  	tracks.drop(function(err, result) {
-//  		collection = new mongodb.Collection(client, 'tracks');
-//		});
+  	tracks.drop(function(err, result) {
+  		collection = new mongodb.Collection(client, 'tracks');
+		});
   });
 });
 
@@ -151,24 +151,38 @@ var findNumbers = function(){
 				trackHash="";
 				var compRes;
 		db.collection("tracks",function(error,trackCollection){
-			trackCollection.find({},COLUMNS).sort(SORTBY.ForNum).toArray(function(err, tracks){
-				while(t<tracks.length && n<nums.length){
-					trackHash = getHash(tracks[t]);
-					numHash = getHash(nums[n]);
-					compRes = compare(tracks[t],nums[n],SORTBY.ForNum);
-
-					if(compRes === 0){
-						trackCollection.update({_id: tracks[t]._id},{$set: {TrackNumber: parseFloat(nums[n].TrackNumber)}})
-						t++;
-						n++;
-					}else if(compRes === 1){
-						n++;
-					}else{
-						t++;
+			trackCollection.find({},COLUMNS).toArray(function(err, tracks){
+				insertHashes(tracks,trackCollection);
+				trackCollection.find({},{_id:1,Hash:1}).sort({Hash:1}).toArray(function(err,tracks){			
+					console.log("trackLenght = "+tracks.length);
+					console.log("numsLenght = "+nums.length);
+					while(t<tracks.length && n<nums.length){
+						trackHash = tracks[t].Hash;
+						numHash = nums[n].Hash;
+						if(numHash === "all the winenational thealligator"){
+							console.log("HERE BUT, tracks = "+trackHash);
+						}
+						if(trackHash == numHash){
+							trackCollection.update({_id: tracks[t]._id},{$set: {TrackNumber: parseFloat(nums[n].TrackNumber)}})
+							t++;
+							n++;
+						}else if(trackHash > numHash){
+							n++;
+						}else if(numHash > trackHash){
+							t++;
+						}
 					}
-				}
+				});
 			});
 		});
+	}
+	function insertHashes(items, collection){
+		items.forEach(function(entry){
+			var hash = entry.Title + entry.Artist + entry.Album;
+		  hash = hash.toLowerCase().replace(",","").replace(".","").replace("&","and").replace("'","");
+			collection.update({_id: entry._id},{$set: {Hash: hash}});
+		});
+
 	}
 	return{
 		doSearch: function(tracks){
@@ -184,9 +198,12 @@ var findNumbers = function(){
 			});
 		},
 		fixNumbers: function(){
-			db.collection("trackNumbers",function(error,nums){
-				nums.find({},COLUMNS).sort(SORTBY.ForNum).toArray(function(err, nums){
-					resolveNums(nums);
+			db.collection("trackNumbers",function(error,col){
+				col.find({},COLUMNS).toArray(function(err, nums){
+					insertHashes(nums,col);
+					col.find({},{_id:1,Hash:1,TrackNumber:1}).sort({Hash:1}).toArray(function(err,nums){
+						resolveNums(nums);
+					});
 				});
 			}); 
 		}
@@ -552,8 +569,8 @@ var respond = function (data){
 	while(event){
 		if(event.name === "msAdd") {
 			var server = mw.getServer();
-			findNumbers().fixNumbers();
-			//mw.getTracks(onTracksAdded,server);
+			//findNumbers().fixNumbers();
+			mw.getTracks(onTracksAdded,server);
 			console.log("serverAdded");
 	  }else if(event.name === "mrAdd"){
 			rendererList[event.uuid] = new UpnpRenderer(event.uuid,event.value);

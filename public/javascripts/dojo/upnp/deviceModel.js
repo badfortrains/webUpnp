@@ -11,6 +11,9 @@ define("upnp/deviceModel",["dojo"], function(dojo){
 					this.devices.push(device);
 					dojo.publish("deviceList/addDevice",[device]);
 				}.bind(this));
+				socket.on("deviceRemoved",function(device){
+					dojo.publish("deviceList/removeDevice",[device]);
+				});
 				dojo.subscribe("deviceList/setmr",this.setmr);
 			},
 			

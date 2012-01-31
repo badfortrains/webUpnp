@@ -115,6 +115,11 @@ webRenderers = sio
 			console.log("WEB RENDERER ADDED hs.sessionid = " +hs.sessionID);
 			upnp.addWebRenderer(hs.sessionID,socket)
 		});
+		socket.on('disconnect', function () {
+			console.log("Web renderer removed");
+			upnp.removeWebRenderer(hs.sessionID)
+			clearInterval(intervalID);
+		});
 		
 });
 upnp.init(sio);

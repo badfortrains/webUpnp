@@ -538,6 +538,15 @@ Controller.prototype = {
 		if(this.renderer !== false){
 			rendererList[this.renderer].getStates();
 		}
+	},
+	removeRenderer: function(uuid){
+		if(this.renderer === uuid){
+			if(rendererList[this.renderer] && rendererList[this.renderer].active === this.sid){
+				this.searchObject = rendererList[this.renderer].searchObject;
+				this.sortObject = rendererList[this.renderer].sortObject;
+			}
+			this.renderer = false;
+		}
 	}
 }
 
@@ -546,6 +555,7 @@ var mw = new mediaWatcher.MediaWatcher();
 var rendererList = [];
 var controllerList = [];
 var mrAddedCB = function(){};
+var mrRemovedCB = function(){};
 var currentRenderer;
 
 
@@ -606,6 +616,9 @@ var events = {
 	},
   onMRAdded: function(callback){
 		mrAddedCB = callback;
+	},
+	onMRRemoved: function(callback){
+		mrRemovedCB = callback;
 	}
 }
 
@@ -698,8 +711,18 @@ exports.init = function(sio){
 				socket.emit('newTracks',data);
 			});
 			events.onMRAdded(function(data){
+				console.log("ON MR ADDED");
 				socket.emit('deviceAdded',data);
 				socket.broadcast.emit('deviceAdded',data);
+			});
+			events.onMRRemoved(function(data){
+				sio.of('/control').clients(data.uuid).forEach(function(entry){
+					entry.removeRenderer(data.uuid);
+				});
+				socket.emit('deviceRemoved',data);
+				socket.broadcast.emit('deviceRemoved',data);
+				sio.of('/control').in(data.uuid).emit('stateChange',{name:"TransportState",value:"STOPPED"});
+				delete rendererList[data.uuid];
 			});
 
 			socket.on('disconnect', function () {
@@ -708,6 +731,11 @@ exports.init = function(sio){
 				  // clear the socket interval to stop refreshing the session
 				  clearInterval(intervalID);
 			});
+
+			socket.removeRenderer = function(uuid){
+				control.removeRenderer(uuid);
+				
+			};
 	});
 }
 
@@ -715,6 +743,10 @@ exports.init = function(sio){
 exports.addWebRenderer = function(uid,socket){
 	rendererList[uid] = new WebRenderer(socket,uid,"testWebRenderer");
 	mrAddedCB({uuid:uid,name:"testWebRenderer"});
+}
+
+exports.removeWebRenderer = function(uid){
+	mrRemovedCB({uuid:uid,name:"testWebRenderer"});
 }
 
 

@@ -7,6 +7,7 @@ define("upnp/deviceView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 				this.ul = dojo.byId("rendererList");
 				dojo.subscribe("deviceList/gotDevices",this,this.render);
 				dojo.subscribe("deviceList/addDevice",this,this.addDevice);
+				dojo.subscribe("deviceList/removeDevice",this,this.removeDevice);
 			},
 
 			deviceClick: function(evt){
@@ -23,7 +24,11 @@ define("upnp/deviceView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 					dojo.place(html, this.ul, "last");
 				  alert("new device added");
 			},	
-		
+			removeDevice: function(entry){
+					var device = dojo.byId(entry.uuid);
+			 		device.parentNode.removeChild(device);
+				  alert("device removed");
+			},
 			render: function(data){
 				var html = "";
 				dojo.forEach(data,function(entry,i){

@@ -32,6 +32,12 @@ define("upnp/trackView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"],
 						dojo.addClass(old,"selected");
 					}
 				});
+				dojo.subscribe("player/stopped", function(){
+					var selected = dojo.query(".selected");
+					if(selected.length){
+						dojo.removeClass(selected[0],"selected");
+					}
+				});
 			},
 
 			trackClick: function(evt){

@@ -48,6 +48,7 @@ define("upnp/playerView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 					dojo.replaceClass(dojo.byId("playControls"),"enabled","disabled");
 					dojo.byId("playButton").innerHTML = "Pause";
 				}else if(data.value === "STOPPED"){
+						dojo.publish("player/stopped");
 						dojo.replaceClass(dojo.byId("playControls"),"disabled","enabled");
 						dojo.byId("playButton").innerHTML = "Play";
 						dojo.byId("mediaInfo").innerHTML = "";

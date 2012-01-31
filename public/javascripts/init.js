@@ -30,7 +30,7 @@ require(["dojo/ready","upnp/playerView","upnp/playerModel","upnp/trackView", "up
 	
 
 	function init(){
-		socket = io.connect('http://192.168.1.12/control');
+		socket = io.connect('http://192.168.1.19/control');
 		var tview = new TrackView(dom.byId("trackTable"));
 		var tmodel = new TrackModel();
 		var dview = new DeviceView(dom.byId("devicesContainer"));

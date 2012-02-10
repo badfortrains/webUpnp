@@ -1,5 +1,5 @@
-var http = require('http');
-var BUFF_SIZE = 40;//must be even
+//*****Constants**********
+var BUFF_SIZE = 40;//number of tracks to cache from db at a time
 var COLUMNS = {Artist:1,Album:1,Title:1,TrackNumber:1,_id:1};
 var SEARCHABLE = ["Artist","Album","Title"];
 var SORTBY = {
@@ -11,9 +11,11 @@ var SORTBY = {
 	AlbumDes : {Album: -1, TrackNumber: -1},
 	TitleDes : {Title: -1},
 	TrackNumberDes : {TrackNumber: -1},
-	ForNum : {Artist: 1, Album: 1, Title: 1}
-}
+}//sorting orders
 
+
+/*Modules*/
+var http = require('http');
 var mediaWatcher = require('./media_watcher');
 var mongodb = require('mongodb');
 var BSON = mongodb.BSONPure;
@@ -28,17 +30,18 @@ db.open(function (error, client) {
   });
 });
 
-
+//Class for getting tracknumbers from Discog, temp fix 
+//for upnp servers that don't send tracknumbers
 var findNumbers = function(){
-		finalCallback = function(){};
 		options = {
 		  host: 'api.discogs.com',
 		  port: 80,
 		  path: '',
 		  headers: {
 		      "Accept-Encoding": "gzip"
-		  }
+		  }//get options
 		};
+	//insert list of tracks and their trackNumbers to db
 	function insertTracks(data){
 		db.collection("trackNumbers",function(error,trackNumbers){
 			console.log("HERE");
@@ -50,6 +53,8 @@ var findNumbers = function(){
 			doNext();
 		});
 	}
+
+	//call discog
 	function makeRequest(callback){
 		http.get(options, function(getRes){
 		  var body = "";
@@ -65,6 +70,8 @@ var findNumbers = function(){
 			});
 		});
 	}
+	
+	//get track listing from discog with passed releaseid
 	function getTracks(artist, album, releaseid){
 		options.path = "/releases/"+releaseid;
 		makeRequest(function(data){
@@ -83,6 +90,8 @@ var findNumbers = function(){
 			}
 		});
 	}
+  
+  //query discog for releaseid, send result to getTracks
 	function getRelease(artist,album){
 		var success = false;
 		options.path = "/database/search?artist="+encodeURIComponent(artist)+"&release_title="+encodeURIComponent(album);
@@ -104,6 +113,8 @@ var findNumbers = function(){
 		var currentIndex = 0;
 		var inputData;
 		var lastHash = "";
+
+  //get next album info
 	function doNext(){
 		if(currentIndex < inputData.length){
 			item = inputData[currentIndex++];
@@ -119,31 +130,9 @@ var findNumbers = function(){
 			lastHash = "" + item.Album + item.Artist;
 		}
 	}
-	function getHash(track){
-		var hash = track.Title + " " + track.Artist + " " + track.Album;
-		//return hash.toLowerCase().replace(",","").replace(".","").replace("and","").replace("&","");
-		return hash;
-	}
-	function compare(track,num,sortObj){
-		var result;
-		function comp(s1,s2){
-			if(s1.toLowerCase().replace(",","").replace(".","").replace("&","and").replace(" ","") == s2.toLowerCase().replace(",","").replace(".","").replace("&","and").replace(" ","")){
-				return 0;
-			}
-			else if(s1 > s2)
-				return 1;
-			else 
-				return -1;
-		}
-		var  keys = Object.keys(sortObj);
- 		for(var i=0; i < keys.length; i++){
-			result = comp(track[keys[i]],num[keys[i]]);
-			if(result !== 0){
-				break;
-			}
-		}
-		return result;
-	}
+  
+  //match tracks to their tracknumbers
+  //nums, array of trackNumbers and matching identity hash
 	function resolveNums(nums){
 		var t=0,
 				n=0,
@@ -176,6 +165,7 @@ var findNumbers = function(){
 			});
 		});
 	}
+	//insert identity hashes into a collection, so they can be sorted and compared easily.
 	function insertHashes(items, collection){
 		items.forEach(function(entry){
 			var hash = entry.Title + entry.Artist + entry.Album;
@@ -184,9 +174,10 @@ var findNumbers = function(){
 		});
 
 	}
+	//public methods
 	return{
+		//start searching discog for tracknumbers
 		doSearch: function(tracks){
-			//finalCallback = callback;
 			db.collection("tracks",function(error,tracks){
 				tracks.find({},COLUMNS).sort(SORTBY.Artist).toArray(function(err, tracks){
 					if(!err){
@@ -197,6 +188,7 @@ var findNumbers = function(){
 				});
 			});
 		},
+    //use TrackNumber table to fix trackNumbers
 		fixNumbers: function(){
 			db.collection("trackNumbers",function(error,col){
 				col.find({},COLUMNS).toArray(function(err, nums){
@@ -212,7 +204,9 @@ var findNumbers = function(){
 
 
 
-
+//UpnpRenderer class
+//UUID = UUID of renderer discovered on network
+//name = friendly name of renderer
 var UpnpRenderer = function(uuid,name){
 	this.uuid = uuid;
 	this.name = name;
@@ -233,6 +227,8 @@ UpnpRenderer.prototype = {
 	setActive: function(sid){
 		this.active = sid;
 	},
+ 
+	//tell upnp library which renderer to control
 	_makeCurrent: function(){
 		if(currentRenderer != this.uuid){
 	 		if(mw.setRenderer(this.uuid)){
@@ -243,6 +239,9 @@ UpnpRenderer.prototype = {
 		}
 		return true;
 	},
+
+	//new search
+	//get a new trackList
   setSearch: function(criteria){
 		var newSearch = [];
 		SEARCHABLE.forEach(function(entry){
@@ -253,12 +252,15 @@ UpnpRenderer.prototype = {
 		this.searchObject = {$or:newSearch};
 		this.getTrackList();
 	},
+  //new sort
+	//get a new trackList
 	setSort: function(by){
 		console.log("BY = " + by);
 		console.log(SORTBY[by]);
 		this.sortObject = SORTBY[by];
 		this.getTrackList();
 	},
+  //query db for tracks, return the result as argument to trackListChangeCB
 	getTrackList: function(){
 		var that = this;
 		console.log(that.sortObject);
@@ -273,6 +275,8 @@ UpnpRenderer.prototype = {
 			});
 		});
 	},
+	//cache next tracks to be played
+	//id of starting track
   getNextTracks: function(id,tracks){
 		id += "";
 		console.log("typeof = "+typeof(id));
@@ -318,6 +322,7 @@ UpnpRenderer.prototype = {
 		}
 		this.listBuffer = newTracks;
 	},
+  //get tracks from db, and return them to getNextTracks
   getPlaylist: function(id){
 
 		db.collection("tracks",function(error,tracks){
@@ -326,6 +331,8 @@ UpnpRenderer.prototype = {
 			}.bind(this));
 		}.bind(this));
   },
+	//play the passed trackId,
+	//call callback on result
 	play: function(trackId,callback){
 			if(callback){
 				this.playResultCB = callback;
@@ -360,6 +367,8 @@ UpnpRenderer.prototype = {
 				});
 			});
 	},
+  //get current state of renderer,
+	//pass result to stateChangeCB
 	getStates: function(){
 			var event = {uuid: this.uuid, name:"TransportState",value: this.TransportState};
 			this.stateChangeCB(event);
@@ -369,10 +378,12 @@ UpnpRenderer.prototype = {
 			event.name = "Volume";
 			event.value = this.Volume;
 			this.stateChangeCB(event);
+			//pass the current track too
 			if(this.currentTrack){
 				this.trackChangeCB(this.currentTrack);
 			}
 	},
+  //button next/previous function 
 	playNext: function(back){
 		if(back){
 			nextIndex = this.nextTrack - 2;
@@ -391,6 +402,8 @@ UpnpRenderer.prototype = {
 			}
 		}
 	},
+	//state of renderer changed
+	//if its a change we care about call stateChangeCB
 	stateChanged: function(event){
 		if( (event.value === "TRANSITIONING" && this.listBuffer === []) || event.value === "STOPPED"){
 			this.currentTrack = {Title:"Unknown Local Track", Artist:"", Album:""};
@@ -404,9 +417,11 @@ UpnpRenderer.prototype = {
 		}
 
 	},
+	//identify ourselves
 	getRenderer: function(){
 		return({uuid: this.uuid, name: this.name});
 	},
+	//toggle play/pause
 	playPause: function(){
 		if(this.TransitionState === "PLAYING"){
 			mw.pause(function(){});
@@ -416,6 +431,11 @@ UpnpRenderer.prototype = {
 	}
 }
 
+//WebRenderer class
+//Same functions as a UPNP Renderer, but is actually a web app.
+//send/recieve events throught socket.io rather than through upnp library.
+//inerhits from upnpRenderer
+//socket = socket.io socket
 var WebRenderer = function(socket,uuid,name){
 	this.socket = socket;
 	this.uuid = uuid;
@@ -442,6 +462,7 @@ var WebRenderer = function(socket,uuid,name){
 	}.bind(this));
 }
 WebRenderer.prototype = new UpnpRenderer();
+//overide
 WebRenderer.prototype.play = function(trackId, callback){
 	if(callback){
 		this.playResultCB = callback;
@@ -478,10 +499,16 @@ WebRenderer.prototype.play = function(trackId, callback){
 		});
 	});
 };
+//overide
 WebRenderer.prototype.playPause = function(){
 	this.socket.emit("playPause");
 }
 
+//Controller class
+//each client associated with a controller
+//controllers send/recieve events from renderers.
+//only a single controller can activley control a renderer at a time.
+//does not need to be associated with a renderer, and can change which renderer it is associated with.
 var Controller = function(sid,socket,target){
 	this.socket = socket;
 	if(target){
@@ -494,10 +521,12 @@ Controller.prototype = {
 	renderer: false,
 	sortObject: SORTBY.Artist,
 	searchObject: {},
-	getTrackList: UpnpRenderer.prototype.getTrackList,
+	getTrackList: UpnpRenderer.prototype.getTrackList,//expose UpnpRenderer::getTrackList
 	trackListChangeCB: function(data){
 		this.socket.emit('newTracks',data);
 	},
+	//set search for user tracklist, if it is the active controller for a renderer,
+	//set search on that renderer.
 	setSearch: function(criteria){
 		if(this.renderer !== false && rendererList[this.renderer].active === this.sid){
 			rendererList[this.renderer].setSearch(criteria);
@@ -506,6 +535,8 @@ Controller.prototype = {
 			justSearch(criteria);
 		}
 	},
+	//set sort for user tracklist, if it is the active controller for a renderer,
+	//set sort on that renderer.
 	setSort: function(category){
 		if(this.renderer !== false && rendererList[this.renderer].active === this.sid){
 			rendererList[this.renderer].setSort(category);
@@ -514,6 +545,7 @@ Controller.prototype = {
 			justSort(category);
 		}
 	},
+  //tell renderer to play
 	play: function(trackId){
 		if(this.renderer === false){
 			this.socket.emit("error",{action: "playTrack", message: "cannot play track, no renderer selected"});
@@ -527,6 +559,7 @@ Controller.prototype = {
 			rendererList[this.renderer].getPlaylist(trackId);
 		}
 	},
+  //switch renderer
 	setRenderer: function(target){
 		if(rendererList[target]){
 			this.renderer = target;
@@ -534,11 +567,13 @@ Controller.prototype = {
 			this.socket.emit("error",{action: "setRenderer", message: "requested renderer no longer available"});
 		}
 	},
+	//get renderer states
 	getStates: function(){
 		if(this.renderer !== false){
 			rendererList[this.renderer].getStates();
 		}
 	},
+	//renderer has left network, update accordingly
 	removeRenderer: function(uuid){
 		if(this.renderer === uuid){
 			if(rendererList[this.renderer] && rendererList[this.renderer].active === this.sid){
@@ -624,6 +659,8 @@ var events = {
 
 
 var controlPoint;
+
+//setup all socket events for the controllers
 exports.init = function(sio){
 	mw.startUpnp(function(){});
 	mw.watchEvents(respond);

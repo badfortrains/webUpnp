@@ -1,11 +1,6 @@
-
 /**
  * Module dependencies.
  */
-
-
-
-
 var io = require('socket.io')
 	, express = require('express')
 	, MemoryStore = express.session.MemoryStore
@@ -92,6 +87,7 @@ sio.set('authorization', function (data, accept) {
     }
 });
 
+//socket events for web renderers
 webRenderers = sio
 	.of('/renderer')
 	.on('connection', function (socket) {
@@ -122,5 +118,6 @@ webRenderers = sio
 		});
 		
 });
+//pass the socket.io object to upnp module to register callbacks
 upnp.init(sio);
 

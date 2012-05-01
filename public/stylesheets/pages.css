@@ -1,0 +1,46 @@
+*{
+padding:0px;
+margin:0px;
+}
+
+body{
+overflow:hidden;
+}
+
+.page{
+  width:400px;
+  height:800px;
+  border:1px solid black; 
+  float:left;
+}
+
+.container{
+ position:absolute;
+ width:1300px;
+ -webkit-transition: left 2s; /* Safari and Chrome */
+}
+/*
+.left{
+  left: -400px;
+}
+
+.right{
+
+  left:405px;
+}*/
+
+#nextPage{
+  position:absolute;
+  top:400px;
+  left:300px;
+  z-index:100;
+}
+
+#previousPage{
+  position:absolute;
+  top:400px;
+  left:20px;
+  z-index:100;
+}
+
+

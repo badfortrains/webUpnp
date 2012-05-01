@@ -24,9 +24,9 @@ var db = new mongodb.Db('test', server);
 db.open(function (error, client) {
   if (error) throw error;
 	db.collection("tracks",function(error,tracks){
-  	tracks.drop(function(err, result) {
+  	/*tracks.drop(function(err, result) {
   		collection = new mongodb.Collection(client, 'tracks');
-		});
+		});*/
   });
 });
 
@@ -36,10 +36,10 @@ var findNumbers = function(){
 		options = {
 		  host: 'api.discogs.com',
 		  port: 80,
-		  path: '',
-		  headers: {
-		      "Accept-Encoding": "gzip"
-		  }//get options
+		  path: ''
+		  //headers: {
+		    //  "Accept-Encoding": "gzip"
+		  //}//get options
 		};
 	//insert list of tracks and their trackNumbers to db
 	function insertTracks(data){
@@ -65,6 +65,7 @@ var findNumbers = function(){
 
 		  getRes.on('end', function(err, data){
 				if(!err){
+					console.log(body);
 					callback(body)
 				}
 			});
@@ -321,6 +322,7 @@ UpnpRenderer.prototype = {
 			newTracks.push(tracks[i]._id);
 		}
 		this.listBuffer = newTracks;
+		console.log("buf length = "+this.listBuffer.length);
 	},
   //get tracks from db, and return them to getNextTracks
   getPlaylist: function(id){
@@ -334,6 +336,8 @@ UpnpRenderer.prototype = {
 	//play the passed trackId,
 	//call callback on result
 	play: function(trackId,callback){
+			console.log("jere");
+			console.log(trackId);
 			if(callback){
 				this.playResultCB = callback;
 			}else{
@@ -341,14 +345,16 @@ UpnpRenderer.prototype = {
 			}
 			var playSuccess = function(track){
 				this.currentTrack = track;
-				this.trackChangeCB(track);
+				this.trackChangeCB(this.currentTrack);
 			}.bind(this);
 					
 			var selected = this._makeCurrent();
 			if(selected !== true)
 				return callback({res: false,error: "Failed to select renderer"});
 			db.collection("tracks",function(error,tracks){
-				//var o_id = new BSON.ObjectID(trackId);
+				if(typeof(trackId)=='string'){
+					trackId = new BSON.ObjectID(trackId);
+				}
 				tracks.find({_id: trackId}).toArray(function(err, item){
 					if(err){
 						console.log(err);
@@ -357,7 +363,7 @@ UpnpRenderer.prototype = {
 					mw.stop(function(resS){
 						mw.open(function(resO){
 							mw.play(function(resP){
-								if(resP.res){	
+								if(resP){
 									playSuccess(item[0]);
 								}
 								return callback({res: resP});
@@ -379,6 +385,8 @@ UpnpRenderer.prototype = {
 			event.value = this.Volume;
 			this.stateChangeCB(event);
 			//pass the current track too
+			console.log("currewnt track");
+			console.log(this.currentTrack);
 			if(this.currentTrack){
 				this.trackChangeCB(this.currentTrack);
 			}
@@ -405,14 +413,17 @@ UpnpRenderer.prototype = {
 	//state of renderer changed
 	//if its a change we care about call stateChangeCB
 	stateChanged: function(event){
-		if( (event.value === "TRANSITIONING" && this.listBuffer === []) || event.value === "STOPPED"){
+		//HACK STOPPED was flushing listbuffer when we went to play next song		
+		//if( (event.value === "TRANSITIONING" && this.listBuffer === []) || event.value === "STOPPED"){
+		if( this.listBuffer === [] && (event.value === "TRANSITIONING" || event.value === "STOPPED") ) {
 			this.currentTrack = {Title:"Unknown Local Track", Artist:"", Album:""};
-			this.listBuffer = [];
 		}
 		if(this[event.name] !== event.value){
- 				if(event.value === "PLAYING" || event.value === "STOPPED" || event.value === "PAUSED_PLAYBACK" || event.name === "Mute" || event.name === "Volume"){
+				//event.value === "STOPPED" removed to prevent overwritting track info HACK
+ 				if(event.value === "PLAYING" || event.value === "PAUSED_PLAYBACK" || event.name === "Mute" || event.name === "Volume"){
+					console.log(event.name);
 					this[event.name] = event.value;
-					stateChangeCB(event);
+					this.stateChangeCB(event);
 				}
 		}
 
@@ -423,9 +434,11 @@ UpnpRenderer.prototype = {
 	},
 	//toggle play/pause
 	playPause: function(){
-		if(this.TransitionState === "PLAYING"){
+		console.log("playPause");
+		console.log(this.TransitionState);
+		if(this.TransportState === "PLAYING"){
 			mw.pause(function(){});
-		}else if(this.TransitionState === "PAUSED_PLAYBACK"){
+		}else if(this.TransportState === "PAUSED_PLAYBACK"){
 			mw.play(function(){});
 		}
 	}
@@ -601,8 +614,8 @@ var onTracksAdded = function(data){
 			tracks.insert(data);
 			tracks.ensureIndex({Artist: 1,Album: 1, Title: 1});
 			console.log("tracks inserted");
-			//findNumbers().doSearch();
-			findNumbers().fixNumbers();
+			//findNumbers().doSearch();//uncomment to get track numbers from discog
+			findNumbers().fixNumbers();//recomment when above is commented
 		});
 	}
 
@@ -614,8 +627,7 @@ var respond = function (data){
 	while(event){
 		if(event.name === "msAdd") {
 			var server = mw.getServer();
-			//findNumbers().fixNumbers();
-			mw.getTracks(onTracksAdded,server);
+			//mw.getTracks(onTracksAdded,server);
 			console.log("serverAdded");
 	  }else if(event.name === "mrAdd"){
 			rendererList[event.uuid] = new UpnpRenderer(event.uuid,event.value);
@@ -671,6 +683,7 @@ exports.init = function(sio){
 			var control = new Controller(hs.sessionID,socket,hs.session.renderer);
 			if(hs.session.renderer){
 				socket.join(hs.session.renderer);
+				control.getStates();
 			}
 			console.log('A socket with sessionID ' + hs.sessionID 
 				  + ' connected!');
@@ -689,8 +702,12 @@ exports.init = function(sio){
 			}, 60 * 1000);
 
 			socket.on('setmr',function(mrId){
-				if(hs.session.renderer)
-					socket.leave(hs.session.renderer);
+				if(hs.session.renderer){
+					if(hs.session.renderer == mrId)
+						return;
+					else
+					  socket.leave(hs.session.renderer);
+				}
 				hs.session.renderer = mrId;
 				socket.join(mrId);
 				control.setRenderer(mrId);

@@ -7,7 +7,7 @@ define("upnp/trackView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"],
 				dojo.connect(this.table,"onclick",this,this.trackClick);
 
 				dojo.connect(dojo.byId("doSearch"),"onclick",function(evt){
-					dojo.publish("trackTable/search",[dojo.byId("searchInput").value]);
+					dojo.publish("trackTable/search",{criteria:[dojo.byId("searchInput").value]});
 				});
 				dojo.connect(dojo.byId("sorts"),"onclick",this,function(evt){
 					var closest = dojo.query(evt.target).closest("span.sort");

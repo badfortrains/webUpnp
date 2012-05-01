@@ -23,11 +23,11 @@ var server = new mongodb.Server("127.0.0.1", 27017, {});
 var db = new mongodb.Db('test', server);
 db.open(function (error, client) {
   if (error) throw error;
-	db.collection("tracks",function(error,tracks){
-  	/*tracks.drop(function(err, result) {
+	/*db.collection("tracks",function(error,tracks){
+  	tracks.drop(function(err, result) {
   		collection = new mongodb.Collection(client, 'tracks');
-		});*/
-  });
+		});
+  });*/
 });
 
 //Class for getting tracknumbers from Discog, temp fix 
@@ -243,14 +243,19 @@ UpnpRenderer.prototype = {
 
 	//new search
 	//get a new trackList
-  setSearch: function(criteria){
-		var newSearch = [];
-		SEARCHABLE.forEach(function(entry){
-			var temp = {};
-			temp[entry] = new RegExp(criteria,"i");
-			newSearch.push(temp);
-		});
-		this.searchObject = {$or:newSearch};
+	//params{criteria: search term for all categories, query: search in specific category}
+  setSearch: function(params){
+		if(params.query){
+			this.searchObject = params.query;
+		}else{
+			var newSearch = [];
+			SEARCHABLE.forEach(function(entry){
+				var temp = {};
+				temp[entry] = new RegExp(params.criteria,"i");
+				newSearch.push(temp);
+			});
+			this.searchObject = {$or:newSearch};
+		}
 		this.getTrackList();
 	},
   //new sort
@@ -753,6 +758,29 @@ exports.init = function(sio){
 			});
 			socket.on('loadTracks',function(){
 				control.getTrackList();
+			});
+
+			socket.on('getArtists',function(){
+				var map = function(){
+					emit(this.Artist,{name:this.Artist});
+				}
+				var reduce = function(k,vals){
+					return {name:k};
+				}	
+				//all we care about is the artist name, make our final "value" null
+				//_id = artist name
+			  var finalize = function(k,vals){
+					return;
+				}
+				db.collection("tracks",function(error,tracks){
+					tracks.mapReduce(map,reduce,{out:{inline:1}},function(err,data){
+						if(data){
+							socket.emit('newArtists',{Artists: data});
+						}else{
+ 							console.log("Error getting artists");
+						}
+					});
+				});
 			});
 
 			events.onStateChange(function(data){

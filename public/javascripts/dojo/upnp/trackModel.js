@@ -6,9 +6,9 @@ define("upnp/trackModel",["dojo","dojo/store/Memory"], function(dojo,memory){
 					dojo.publish("trackTable/loading");
 					socket.emit("setSort",category);
 				});
-				dojo.subscribe("trackTable/search",this, function(criteria){
+				dojo.subscribe("trackTable/search",this, function(searchObj){
 					dojo.publish("trackTable/loading");
-					socket.emit("setSearch",criteria);
+					socket.emit("setSearch",searchObj);
 				});
 
 				dojo.subscribe("trackTable/clearSearch",this,function(){
@@ -21,8 +21,12 @@ define("upnp/trackModel",["dojo","dojo/store/Memory"], function(dojo,memory){
 				socket.on("newTracks",function(data){
 						dojo.publish("trackTable/tracksChanged",[data]);
 				});	
+				socket.on("newArtists",function(data){
+						dojo.publish("trackTable/artistsChanged",[data]);
+				});	
 				dojo.publish("trackTable/loading");
 				socket.emit("loadTracks");
+				//socket.emit("getArtists");
 			}
 	});
 });

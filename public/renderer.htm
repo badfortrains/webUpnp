@@ -29,10 +29,16 @@ function main(event){
 
 
  var jPlayer = $("#jplayer").jPlayer({
-  ready: main(event),
+  ready: main,
 	ended: function(){socket.emit("stateChanged",{name: "TransportState",value: "NO_MEDIA_PRESENT"})},
-	play: function(){playStatus=true;socket.emit("stateChanged",{name: "TransportState",value: "PLAYING"})},
-	loadeddata: function(){socket.emit("stateChanged",{name: "playResult",value: {res: true}})},
+	play: function(){
+		playStatus=true;
+		socket.emit("stateChanged",{name: "TransportState",value: "PLAYING"});
+		socket.emit("stateChanged",{name: "playResult",value: {res: true}});
+	},
+	loadeddata: function(){
+		//socket.emit("stateChanged",{name: "playResult",value: {res: true}})
+	},
 	error: function(){
 socket.emit("stateChanged",{name: "playResult",value: {res: false, error: "could not load track"}})},
 	pause: function(){playStatus=false;socket.emit("stateChanged",{name: "TransportState",value: "PAUSED_PLAYBACK"})},

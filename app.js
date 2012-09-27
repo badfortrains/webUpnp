@@ -63,6 +63,7 @@ app.listen(80);
 
 
 var sio = io.listen(app);
+//sio.set('log level',0);
 var parseCookie = require('connect').utils.parseCookie;
 var Session = require('connect').middleware.session.Session;
 sio.set('authorization', function (data, accept) {

@@ -3,7 +3,7 @@ var BUFF_SIZE = 40;//number of tracks to cache from db at a time
 var COLUMNS = {Artist:1,Album:1,Title:1,TrackNumber:1,_id:1};
 var SEARCHABLE = ["Artist","Album","Title"];
 var SORTBY = {
-	Artist : {Artist: 1, Album: 1, TrackNumber: 1},
+	Artist : {Artist: 1, Album: 1, oID: 1},
 	Album : {Album: 1, TrackNumber: 1},
 	Title : {Title: 1},
 	TrackNumber : {TrackNumber: 1},
@@ -23,12 +23,40 @@ var server = new mongodb.Server("127.0.0.1", 27017, {});
 var db = new mongodb.Db('test', server);
 db.open(function (error, client) {
   if (error) throw error;
-	/*db.collection("tracks",function(error,tracks){
+	db.collection("tracks",function(error,tracks){
   	tracks.drop(function(err, result) {
   		collection = new mongodb.Collection(client, 'tracks');
 		});
-  });*/
+  });
 });
+
+var updateFromObjID = function(){
+	var map = function(){
+		emit(this.Album,this.Artist);
+	}
+	var reduce = function(k,vals){
+		return vals[0];
+	}
+	db.collection("tracks",function(error,tracks){
+		tracks.mapReduce(map,reduce,{out:{inline:1}},function(err,data){
+			if(data && !err){
+				data.forEach(function(album){
+					tracks.find({Album:album._id,Artist:album.value},{_id:1,oID:1}).sort({oID:1}).toArray(function(err,data){
+						if(err){
+							console.log(err);
+						}else{
+							data.forEach(function(entry,i){
+								tracks.update({_id:entry._id},{$set:{TrackNumber:i+1}});
+							});
+						}
+					});
+				});
+			}else{
+				console.log("Error getting artists");
+			}
+		});
+	});
+}
 
 //Class for getting tracknumbers from Discog, temp fix 
 //for upnp servers that don't send tracknumbers
@@ -440,7 +468,7 @@ UpnpRenderer.prototype = {
 	//toggle play/pause
 	playPause: function(){
 		console.log("playPause");
-		console.log(this.TransitionState);
+		console.log(this.TransportState);
 		if(this.TransportState === "PLAYING"){
 			mw.pause(function(){});
 		}else if(this.TransportState === "PAUSED_PLAYBACK"){
@@ -616,11 +644,14 @@ var onTracksAdded = function(data){
 	//add to db;
 	if(data !== 'fail'){
 		db.collection("tracks",function(error,tracks){
-			tracks.insert(data);
-			tracks.ensureIndex({Artist: 1,Album: 1, Title: 1});
-			console.log("tracks inserted");
+			tracks.insert(data, function(err,data){
+				tracks.ensureIndex({Artist: 1,Album: 1, Title: 1});
+				console.log("tracks inserted");
+				updateFromObjID();
+			});
+
 			//findNumbers().doSearch();//uncomment to get track numbers from discog
-			findNumbers().fixNumbers();//recomment when above is commented
+			//findNumbers().fixNumbers();//recomment when above is commented
 		});
 	}
 
@@ -632,7 +663,7 @@ var respond = function (data){
 	while(event){
 		if(event.name === "msAdd") {
 			var server = mw.getServer();
-			//mw.getTracks(onTracksAdded,server);
+			mw.getTracks(onTracksAdded,server);
 			console.log("serverAdded");
 	  }else if(event.name === "mrAdd"){
 			rendererList[event.uuid] = new UpnpRenderer(event.uuid,event.value);
@@ -805,6 +836,7 @@ exports.init = function(sio){
 				socket.broadcast.emit('deviceRemoved',data);
 				sio.of('/control').in(data.uuid).emit('stateChange',{name:"TransportState",value:"STOPPED"});
 				delete rendererList[data.uuid];
+				this.renderer = false;
 			});
 
 			socket.on('disconnect', function () {
@@ -815,6 +847,7 @@ exports.init = function(sio){
 			});
 
 			socket.removeRenderer = function(uuid){
+				hs.session.renderer = false;
 				control.removeRenderer(uuid);
 				
 			};

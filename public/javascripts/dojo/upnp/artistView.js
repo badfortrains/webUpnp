@@ -40,12 +40,20 @@ define("upnp/artistView",["dojo", "dojo/NodeList-traverse", "dojo/NodeList-dom"]
 			},
 
 			render: function(data){
-				var html = "<table id=artistTable><tbody>";
+				var letter = 65;
+				var html = "<ul id='track-list'>";
 				dojo.forEach(data.Artists,function(entry,i){
-					html += '<tr>';
-					html += "<td>"+entry._id+"</td></tr>";
+					
+					if(entry._id.toUpperCase().charCodeAt(0) >= letter){
+						letter = entry._id.toUpperCase().charCodeAt(0);
+						html += '<li class="find"><div class="abc-box"></div><input></input></li>';
+						html += '<li><a name="abc'+String.fromCharCode(letter)+'"></a>'+entry._id+"</li>";
+						letter++;
+					}else{
+						html += "<li>"+entry._id+"</li>";
+					}
 				});
-				html += "</tbody></table>";
+				html += "</ul>";
 				
 				dojo.query(".progress").replaceClass("not-loading","loading");		
 				this.el.innerHTML = html;

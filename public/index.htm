@@ -1,0 +1,101 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.2.min.js"></script>
+<script>
+    window.scrollTo(0,1);
+ $(document).ready(function(){
+		var alphabets = $("#alphabet").detach();
+		$(".close").live("click",function(){
+			$(this).parent().parent().parent().toggleClass("hide-find");
+			$("#alphabet").hide().remove();
+			
+		});
+		$(".abc-box").click(function(){
+			$(".find").removeClass("hide-find");
+			$(this).parent().addClass("hide-find").append(alphabets.show());
+		});
+	
+	});
+</script>
+</head>
+
+<body>
+	<nav>
+			<a href="#">Artists</a>
+			<a href="#">Albums</a>
+			<a href="#">Tracks</a>
+	</nav>
+	<div id="tracks">
+		<div id="alphabet">
+			<ul>
+				<li>A<li>
+				<li>B<li>
+				<li>C<li>
+				<li>D<li>
+				<li>E<li>
+				<li>F<li>
+				<li>G<li>
+				<li>H<li>
+				<li>I<li>
+				<li>J<li>
+				<li>K<li>
+				<li>L<li>
+				<li>M<li>
+				<li>N<li>
+				<li>O<li>
+				<li>P<li>
+				<li>Q<li>
+				<li>R<li>
+				<li>S<li>
+				<li>T<li>
+				<li>U<li>
+				<li>V<li>
+				<li>W<li>
+				<li>X<li>
+				<li>Y<li>
+				<li>Z<li>
+			</ul>
+			<div class="close"></div>
+		</div>
+		<ul id="track-list">
+			<li class="find">
+				<div class="abc-box"></div>
+				<input></input>
+			</li>
+			<li>Aamadou and Miriam</li>
+			<li>Alec Onsworth</li>
+			<li>Alabama Shakes</li>
+			<li>Andrew Bird</li>
+			<li class="find">
+				<div class="abc-box"></div>
+			</li>
+			<li>Aamadou and Miriam</li>
+			<li>Alec Onsworth</li>
+			<li>Alabama Shakes</li>
+			<li>Andrew Bird</li>
+			<li>Alt-J</li>
+			<li>Aamadou and Miriam</li>
+			<li>Alec Onsworth</li>
+			<li>Alabama Shakes</li>
+			<li>Andrew Bird</li>
+			<li>Alt-J</li>
+			<li>Aamadou and Miriam</li>
+			<li>Alec Onsworth</li>
+			<li>Alabama Shakes</li>
+			<li>Andrew Bird</li>
+			<li>Alt-J</li>
+			<li>Aamadou and Miriam</li>
+			<li>Alec Onsworth</li>
+			<li>Alabama Shakes</li>
+			<li>Andrew Bird</li>
+			<li>Alt-J</li>
+			<li>Aamadou and Miriam</li>
+			<li>Alec Onsworth</li>
+			<li>Alabama Shakes</li>
+			<li>Andrew Bird</li>
+		</ul>
+	</div>
+</body>
+</html>
